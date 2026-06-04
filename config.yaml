@@ -1,0 +1,56 @@
+# 情绪识别系统配置文件
+
+vision:
+  # 人脸检测模型
+  face_detection_model: "dlib"  # dlib 或 opencv
+  # 表情分类模型
+  expression_model: "fer2013"  # fer2013 或 affectnet
+  # 输入图像大小
+  image_size: 224
+  # 人脸检测置信度阈值
+  detection_threshold: 0.5
+  # 表情分类置信度阈值
+  expression_threshold: 0.6
+
+audio:
+  # 音频采样率
+  sample_rate: 16000
+  # 音频帧长度
+  frame_length: 2048
+  # 语音识别模型
+  speech_model: "wav2vec2"
+  # 情感分析模型
+  emotion_model: "speech-emotion-recognition"
+
+text:
+  # 文本情感分析模型
+  sentiment_model: "bert-base-multilingual-uncased"
+  # 最大文本长度
+  max_length: 512
+  # 语言
+  language: "zh"  # 中文
+
+emotion:
+  # 情绪类别
+  emotion_classes:
+    - "happy"      # 开心
+    - "sad"        # 悲伤
+    - "angry"      # 愤怒
+    - "surprised"  # 惊讶
+    - "disgusted"  # 厌恶
+    - "afraid"     # 恐惧
+    - "neutral"    # 中性
+  
+  # 多模态融合权重
+  fusion_weights:
+    facial: 0.4    # 面部表情权重
+    audio: 0.3     # 语音权重
+    text: 0.3      # 文本权重
+  
+  # 融合方法
+  fusion_method: "weighted_average"  # weighted_average 或 voting
+
+device:
+  # 使用 GPU 或 CPU
+  use_gpu: true
+  gpu_id: 0
