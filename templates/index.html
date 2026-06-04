@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多模态情绪识别系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 40px;
+        }
+        
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .section-icon {
+            font-size: 2em;
+            margin-right: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .result {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .emotion-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .emotion-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .confidence-bar {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            height: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .confidence-fill {
+            background: white;
+            height: 100%;
+            transition: width 0.3s;
+        }
+        
+        .confidence-text {
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .emotions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .emotion-score {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .emotion-score-name {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .emotion-score-bar {
+            background: #e9ecef;
+            border-radius: 3px;
+            height: 6px;
+            overflow: hidden;
+        }
+        
+        .emotion-score-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+        }
+        
+        .image-preview {
+            width: 100%;
+            border-radius: 10px;
+            margin-top: 15px;
+            max-height: 300px;
+            object-fit: contain;
+        }
+        
+        .error {
+            background: #ffe0e0;
+            color: #d32f2f;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #d32f2f;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #999;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #999;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 多模态情绪识别系统</h1>
+            <p>通过面部表情、语音、文本等多种方式识别用户情绪</p>
+        </div>
+        
+        <div class="content">
+            <!-- 左侧：图片分析 -->
+            <div class="section">
+                <h2><span class="section-icon">📸</span>面部表情识别</h2>
+                <div class="form-group">
+                    <label>上传图片文件</label>
+                    <input type="file" id="imageFile" accept="image/*">
+                </div>
+                <button onclick="analyzeImage()">分析表情</button>
+                
+                <div class="loading" id="imageLoading">
+                    <div class="spinner"></div>
+                    <p>正在分析图片...</p>
+                </div>
+                
+                <div class="error" id="imageError"></div>
+                
+                <div class="result" id="imageResult">
+                    <div class="emotion-box">
+                        <div class="emotion-name" id="imagePrimaryEmotion">--</div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="imageConfidenceFill"></div>
+                        </div>
+                        <div class="confidence-text" id="imageConfidenceText">--</div>
+                    </div>
+                    <div id="imageStats"></div>
+                    <img id="imagePreview" class="image-preview" src="" alt="分析结果">
+                </div>
+            </div>
+            
+            <!-- 右侧：音频分析 -->
+            <div class="section">
+                <h2><span class="section-icon">🎤</span>语音情感分析</h2>
+                <div class="form-group">
+                    <label>上传音频文件</label>
+                    <input type="file" id="audioFile" accept="audio/*">
+                </div>
+                <button onclick="analyzeAudio()">分析语调</button>
+                
+                <div class="loading" id="audioLoading">
+                    <div class="spinner"></div>
+                    <p>正在分析音频...</p>
+                </div>
+                
+                <div class="error" id="audioError"></div>
+                
+                <div class="result" id="audioResult">
+                    <div class="emotion-box">
+                        <div class="emotion-name" id="audioPrimaryEmotion">--</div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="audioConfidenceFill"></div>
+                        </div>
+                        <div class="confidence-text" id="audioConfidenceText">--</div>
+                    </div>
+                    <div class="emotions-grid" id="audioEmotions"></div>
+                </div>
+            </div>
+            
+            <!-- 左下：文本分析 -->
+            <div class="section">
+                <h2><span class="section-icon">📝</span>文本情感分析</h2>
+                <div class="form-group">
+                    <label>输入文本</label>
+                    <textarea id="textInput" placeholder="请输入你想分析的文本..."></textarea>
+                </div>
+                <button onclick="analyzeText()">分析情感</button>
+                
+                <div class="loading" id="textLoading">
+                    <div class="spinner"></div>
+                    <p>正在分析文本...</p>
+                </div>
+                
+                <div class="error" id="textError"></div>
+                
+                <div class="result" id="textResult">
+                    <div class="emotion-box">
+                        <div class="emotion-name" id="textPrimaryEmotion">--</div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="textConfidenceFill"></div>
+                        </div>
+                        <div class="confidence-text" id="textConfidenceText">--</div>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-label">强度</div>
+                            <div class="stat-value" id="textIntensity">--</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">置信度</div>
+                            <div class="stat-value" id="textConfidence">--</div>
+                        </div>
+                    </div>
+                    <div class="emotions-grid" id="textEmotions"></div>
+                </div>
+            </div>
+            
+            <!-- 右下：多模态融合 -->
+            <div class="section">
+                <h2><span class="section-icon">🧠</span>多模态融合分析</h2>
+                <p style="color: #999; margin-bottom: 20px;">综合以上三个系统的分析结果，得出最终情绪判断</p>
+                <button onclick="analyzeMultimodal()">融合分析</button>
+                
+                <div class="loading" id="multimodalLoading">
+                    <div class="spinner"></div>
+                    <p>正在融合分析...</p>
+                </div>
+                
+                <div class="error" id="multimodalError"></div>
+                
+                <div class="result" id="multimodalResult">
+                    <div class="emotion-box">
+                        <div class="emotion-name" id="multimodalPrimaryEmotion">--</div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="multimodalConfidenceFill"></div>
+                        </div>
+                        <div class="confidence-text" id="multimodalConfidenceText">--</div>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-label">是否积极</div>
+                            <div class="stat-value" id="multimodalValence">--</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">能量度</div>
+                            <div class="stat-value" id="multimodalArousal">--</div>
+                        </div>
+                    </div>
+                    <div class="emotions-grid" id="multimodalEmotions"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 存储分析结果
+        let analysisResults = {
+            facial: null,
+            audio: null,
+            text: null
+        };
+        
+        function showError(elementId, message) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+        
+        function hideError(elementId) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.classList.remove('show');
+        }
+        
+        function showLoading(elementId) {
+            document.getElementById(elementId).style.display = 'block';
+        }
+        
+        function hideLoading(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+        
+        function showResult(elementId) {
+            document.getElementById(elementId).classList.add('show');
+        }
+        
+        async function analyzeImage() {
+            const fileInput = document.getElementById('imageFile');
+            if (!fileInput.files.length) {
+                showError('imageError', '请先选择图片文件');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            hideError('imageError');
+            showLoading('imageLoading');
+            document.getElementById('imageResult').classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/analyze/image', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showError('imageError', data.error || '分析失败');
+                    return;
+                }
+                
+                if (data.faces_count === 0) {
+                    showError('imageError', '未检测到人脸，请上传包含清晰人脸的图片');
+                    return;
+                }
+                
+                // 存储结果
+                const result = data.results[0];
+                analysisResults.facial = {
+                    emotion: result.emotion,
+                    scores: result.scores
+                };
+                
+                // 显示结果
+                document.getElementById('imagePrimaryEmotion').textContent = result.emotion;
+                const confidence = result.confidence;
+                document.getElementById('imageConfidenceFill').style.width = (confidence * 100) + '%';
+                document.getElementById('imageConfidenceText').textContent = (confidence * 100).toFixed(1) + '%';
+                
+                // 显示所��情绪分数
+                let scoresHtml = '';
+                for (const [emotion, score] of Object.entries(result.scores)) {
+                    scoresHtml += `
+                        <div class="emotion-score">
+                            <div class="emotion-score-name">${emotion}</div>
+                            <div class="emotion-score-bar">
+                                <div class="emotion-score-fill" style="width: ${score * 100}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                document.getElementById('imageStats').innerHTML = scoresHtml;
+                
+                // 显示预览图片
+                if (data.result_image) {
+                    document.getElementById('imagePreview').src = data.result_image;
+                }
+                
+                showResult('imageResult');
+            } catch (error) {
+                showError('imageError', '请求失败: ' + error.message);
+            } finally {
+                hideLoading('imageLoading');
+            }
+        }
+        
+        async function analyzeAudio() {
+            const fileInput = document.getElementById('audioFile');
+            if (!fileInput.files.length) {
+                showError('audioError', '请先选择音频文件');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            hideError('audioError');
+            showLoading('audioLoading');
+            document.getElementById('audioResult').classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/analyze/audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showError('audioError', data.error || '分析失败');
+                    return;
+                }
+                
+                // 存储结果
+                analysisResults.audio = {
+                    emotion: data.emotion,
+                    scores: data.scores
+                };
+                
+                // 显示结果
+                document.getElementById('audioPrimaryEmotion').textContent = data.emotion;
+                const confidence = data.confidence;
+                document.getElementById('audioConfidenceFill').style.width = (confidence * 100) + '%';
+                document.getElementById('audioConfidenceText').textContent = (confidence * 100).toFixed(1) + '%';
+                
+                // 显示所有情绪分数
+                let scoresHtml = '';
+                for (const [emotion, score] of Object.entries(data.scores)) {
+                    scoresHtml += `
+                        <div class="emotion-score">
+                            <div class="emotion-score-name">${emotion}</div>
+                            <div class="emotion-score-bar">
+                                <div class="emotion-score-fill" style="width: ${score * 100}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                document.getElementById('audioEmotions').innerHTML = scoresHtml;
+                
+                showResult('audioResult');
+            } catch (error) {
+                showError('audioError', '请求失败: ' + error.message);
+            } finally {
+                hideLoading('audioLoading');
+            }
+        }
+        
+        async function analyzeText() {
+            const text = document.getElementById('textInput').value;
+            if (!text) {
+                showError('textError', '请输入文本');
+                return;
+            }
+            
+            hideError('textError');
+            showLoading('textLoading');
+            document.getElementById('textResult').classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/analyze/text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showError('textError', data.error || '分析失败');
+                    return;
+                }
+                
+                // 存储结果
+                analysisResults.text = {
+                    emotion: data.emotion,
+                    scores: data.scores
+                };
+                
+                // 显示结果
+                document.getElementById('textPrimaryEmotion').textContent = data.emotion;
+                const confidence = data.confidence;
+                document.getElementById('textConfidenceFill').style.width = (confidence * 100) + '%';
+                document.getElementById('textConfidenceText').textContent = (confidence * 100).toFixed(1) + '%';
+                document.getElementById('textIntensity').textContent = (data.intensity * 100).toFixed(0) + '%';
+                document.getElementById('textConfidence').textContent = (confidence * 100).toFixed(0) + '%';
+                
+                // 显示所有情绪分数
+                let scoresHtml = '';
+                for (const [emotion, score] of Object.entries(data.scores)) {
+                    scoresHtml += `
+                        <div class="emotion-score">
+                            <div class="emotion-score-name">${emotion}</div>
+                            <div class="emotion-score-bar">
+                                <div class="emotion-score-fill" style="width: ${score * 100}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                document.getElementById('textEmotions').innerHTML = scoresHtml;
+                
+                showResult('textResult');
+            } catch (error) {
+                showError('textError', '请求失败: ' + error.message);
+            } finally {
+                hideLoading('textLoading');
+            }
+        }
+        
+        async function analyzeMultimodal() {
+            // 检查是否有可用的分析结果
+            if (!analysisResults.facial && !analysisResults.audio && !analysisResults.text) {
+                showError('multimodalError', '请先进行至少一种模式的分析');
+                return;
+            }
+            
+            hideError('multimodalError');
+            showLoading('multimodalLoading');
+            document.getElementById('multimodalResult').classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/analyze/multimodal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        facial_emotion: analysisResults.facial?.emotion,
+                        facial_scores: analysisResults.facial?.scores,
+                        audio_emotion: analysisResults.audio?.emotion,
+                        audio_scores: analysisResults.audio?.scores,
+                        text_emotion: analysisResults.text?.emotion,
+                        text_scores: analysisResults.text?.scores
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showError('multimodalError', data.error || '分析失败');
+                    return;
+                }
+                
+                // 显示结果
+                document.getElementById('multimodalPrimaryEmotion').textContent = data.emotion;
+                const confidence = data.confidence;
+                document.getElementById('multimodalConfidenceFill').style.width = (confidence * 100) + '%';
+                document.getElementById('multimodalConfidenceText').textContent = (confidence * 100).toFixed(1) + '%';
+                
+                // 显示情感属性
+                const valence = data.properties.valence;
+                const arousal = data.properties.arousal;
+                document.getElementById('multimodalValence').textContent = valence > 0 ? '✓ 积极' : '✗ 消极';
+                document.getElementById('multimodalArousal').textContent = arousal > 0 ? '高' : '低';
+                
+                // 显示所有情绪分数
+                let scoresHtml = '';
+                for (const [emotion, score] of Object.entries(data.scores)) {
+                    scoresHtml += `
+                        <div class="emotion-score">
+                            <div class="emotion-score-name">${emotion}</div>
+                            <div class="emotion-score-bar">
+                                <div class="emotion-score-fill" style="width: ${score * 100}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                document.getElementById('multimodalEmotions').innerHTML = scoresHtml;
+                
+                showResult('multimodalResult');
+            } catch (error) {
+                showError('multimodalError', '请求失败: ' + error.message);
+            } finally {
+                hideLoading('multimodalLoading');
+            }
+        }
+    </script>
+</body>
+</html>
